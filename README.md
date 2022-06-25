@@ -196,7 +196,7 @@ Create Question
 Searching for a question that does not exist return a 200 status code below:
 
 ```bash
-curl -X POST http://127.0.0.1:5000/questions -d '{"searchTerm" : "this does not exist"}' -H'Content-Type: application/json' 
+curl -X POST http://127.0.0.1:5000/searchquestions -d '{"searchTerm" : "this does not exist"}' -H'Content-Type: application/json' 
 ```
 
 will return
@@ -211,7 +211,7 @@ will return
 
 If you try to insert a new `question`, but forget to provide a required field, it will throw an `400` error:
 ```bash
-curl -X POST http://127.0.0.1:5000/questions -d '{ "question" : "Is this a question without an answer?", "category" : "1" , "difficulty" : 1 }' -H 'Content-Type: application/json'
+curl -X POST http://127.0.0.1:5000/searchquestions -d '{ "question" : "Is this a question without an answer?", "category" : "1" , "difficulty" : 1 }' -H 'Content-Type: application/json'
 ```
 
 will return
