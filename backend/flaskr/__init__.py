@@ -22,8 +22,12 @@ def create_app(test_config=None):
     # CORS Headers
     @app.after_request
     def after_request(response):
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,true')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add(
+            'Access-Control-Allow-Headers',
+            'Content-Type,Authorization,true')
+        response.headers.add(
+            'Access-Control-Allow-Methods',
+            'GET,PUT,POST,DELETE,OPTIONS')
         return response
 
     """
@@ -37,9 +41,6 @@ def create_app(test_config=None):
         formatted_data = [data.format() for data in requested_data]
         current_data = formatted_data[start:end]
         return current_data
-
-
-
 
     @app.route('/categories')
     def get_categories():
@@ -65,8 +66,10 @@ def create_app(test_config=None):
         categories = [category.format() for category in Category.query.all()]
         categories_list = [data['type'] for data in categories]
         current_category = categories_list
-        return jsonify({'questions': questions_paginated, 'total_questions': len(questions),
-                        'current_category': current_category, 'categories': categories_list})
+        return jsonify({'questions': questions_paginated,
+                        'total_questions': len(questions),
+                        'current_category': current_category,
+                        'categories': categories_list})
 
     """
     TEST: When you click the trash icon next to a question, the question will be removed.
@@ -80,8 +83,8 @@ def create_app(test_config=None):
             abort(404)
         try:
             question.delete()
-            return jsonify({'success': True, 'question_id':question.id}, 200)
-        except:
+            return jsonify({'success': True, 'question_id': question.id}, 200)
+        except BaseException:
             abort(422)
 
     """
@@ -97,9 +100,12 @@ def create_app(test_config=None):
             abort(400)
         search_term = request.get_json().get('searchTerm', None)
         if search_term:
-            questions = Question.query.filter(Question.question.ilike('%' + search_term + '%')).all()
+            questions = Question.query.filter(
+                Question.question.ilike(
+                    '%' + search_term + '%')).all()
             if questions:
-                formatted_questions = [question.format() for question in questions]
+                formatted_questions = [question.format()
+                                       for question in questions]
                 return jsonify({'question': formatted_questions,
                                 'total_question': len(formatted_questions),
                                 'current_category': questions[0].category,
@@ -114,10 +120,15 @@ def create_app(test_config=None):
         if not question or not answer or not difficulty or not category:
             abort(400)
         try:
-            new_question = Question(question=question, answer=answer, category=category, difficulty=difficulty)
+            new_question = Question(
+                question=question,
+                answer=answer,
+                category=category,
+                difficulty=difficulty)
             new_question.insert()
-            return jsonify({'success': True, 'question_id': new_question.id}, 201)
-        except:
+            return jsonify(
+                {'success': True, 'question_id': new_question.id}, 201)
+        except BaseException:
             abort(422)
 
     """
@@ -126,21 +137,25 @@ def create_app(test_config=None):
     Try using the word "title" to start.
     """
 
-    """ 
+    """
     TEST: In the "List" tab / main screen, clicking on one of the
     categories in the left column will cause only questions of that
     category to be shown.
     """
 
-    @app.route('/categories/<int:category_id>/questions')
-    def get_question_by_category(category_id):
-        category = Category.query.get(category_id)
-        if category is None:
+    @app.route('/categories/<int:category_id>/questions',methods=["GET"])
+    def get_category_questions(category_id):
+        
+        category_questions =[question.format() for question in Question.query.filter(Question.category==category_id).all()]
+
+        if not category_questions:
             abort(404)
-        questions = (Question.query.filter(Question.category == str(category_id)).order_by(Question.id).all())
-        formatted_questions = paginate_helper(request, questions)
-        return jsonify({'success': True, 'questions': formatted_questions, 'total_questions': len(questions),
-                        'current_category': category_id}, 200)
+
+        return jsonify({
+            "questions": category_questions,
+            "total_questions":len(category_questions),
+            "current_category": Category.query.filter(Category.id==category_id).first().type
+        }),200
 
     """
     TEST: In the "Play" tab, after a user selects "All" or a category,
@@ -149,35 +164,35 @@ def create_app(test_config=None):
     """
 
     @app.route('/quizzes', methods=['POST'])
-    def get_quiz():
-        body = request.get_json()
-        if body is None:
-            abort(404)
-        previous_questions = body.get('previous_questions', None)
-        quiz_category = body.get('quiz_category', None)
-        if not previous_questions:
-            if quiz_category:
-                question_list = Question.query.filter(Question.category == (quiz_category['id'])).all()
-            else:
-                question_list = Question.query.all()
-        else:
-            if quiz_category:
-                question_list = Question.query.filter(Question.category == str(quiz_category['id'])). \
-                    filter(Question.id.notin_(previous_questions)).all()
-            else:
-                question_list = Question.query.filter(Question.id.notin_(previous_questions)).all()
-        formatted_questions = [question.format() for question in question_list]
-        total = len(formatted_questions)
-        if total == 1:
-            random_question = formatted_questions[0]
-        else:
-            random_question = formatted_questions[random.randint(0, len(formatted_questions)-1)]
+    
+    def play_quiz():
+        previous_questions = request.get_json().get('previous_questions')
+        quiz_category =request.get_json().get('quiz_category')
 
-        return jsonify({
-            'success': True,
-            'question': random_question
+
+
+        if  previous_questions is None or quiz_category is None:
+            abort(400)
+        if quiz_category["id"] == 0:            
+            category_questions =[question.format() for question in Question.query.all()]
+        else:
+          category_questions =[question.format() for question in Question.query.filter(Question.category==quiz_category['id']).all()]
+
+        
+
+        while True:
+            random_question = random.choice(category_questions)
+            if random_question['id'] not in previous_questions:
+                break
+            else:
+                 return jsonify({
+            "question":None
         })
-
+        
+        return jsonify({
+            "question":random_question
+        }),200
+     
     """
     @DONE:
     Create error handlers for all expected errors

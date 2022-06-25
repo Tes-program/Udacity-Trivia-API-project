@@ -2,9 +2,11 @@ import os
 from sqlalchemy import Column, String, Integer, create_engine
 from flask_sqlalchemy import SQLAlchemy
 import json
+from dbsetup import DB_HOST, DB_NAME, DB_PASSWORD, DB_USER
 
 database_name = 'trivia'
-database_path = 'postgresql+psycopg2://postgres:teslim@localhost:5432/trivia'
+DB_PATH = 'postgresql+psycopg2://{}:{}@{}/{}'.format(
+    DB_USER, DB_PASSWORD, DB_HOST, DB_NAME)
 
 db = SQLAlchemy()
 
@@ -12,17 +14,22 @@ db = SQLAlchemy()
 setup_db(app)
     binds a flask application and a SQLAlchemy service
 """
-def setup_db(app, database_path=database_path):
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_path
+
+
+def setup_db(app, database_path=DB_PATH):
+    app.config["SQLALCHEMY_DATABASE_URI"] = DB_PATH
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     db.app = app
     db.init_app(app)
     db.create_all()
 
+
 """
 Question
 
 """
+
+
 class Question(db.Model):
     __tablename__ = 'questions'
 
@@ -56,12 +63,15 @@ class Question(db.Model):
             'answer': self.answer,
             'category': self.category,
             'difficulty': self.difficulty
-            }
+        }
+
 
 """
 Category
 
 """
+
+
 class Category(db.Model):
     __tablename__ = 'categories'
 
@@ -75,4 +85,4 @@ class Category(db.Model):
         return {
             'id': self.id,
             'type': self.type
-            }
+        }
